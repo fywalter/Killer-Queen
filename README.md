@@ -5,7 +5,6 @@ Current stage: code reconstruction
 
 Main schedual:
 ==============
-
 <table>
   <thead>
     <tr>
@@ -14,7 +13,6 @@ Main schedual:
       <th>Stage 3</th>
       <th>Stage 4</th>
       <th>Stage 5</th>
-      <th>Stage 6</th>
     </tr>
   </thead>
   <tbody>
@@ -24,7 +22,6 @@ Main schedual:
       <td>Outlier detection</td>
       <td>Feature selection</td>
       <td>Model selection and hyper-param tuning</td>
-
     </tr>
   </tbody>
 </table>
