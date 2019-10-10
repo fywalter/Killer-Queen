@@ -4,14 +4,28 @@ Current stage: code reconstruction
 ==================================
 
 Main schedual:
---------------
-#Stage 1
-Code reconstructing
-#Stage 2
-Fill the missing data
-#Stage 3
-Outlier detection
-#Stage 4
-Feature selection
-#Stage 5
-Model selection and hyper-param tuning
+==============
+
+<table>
+  <thead>
+    <tr>
+      <th>Stage 1</th>
+      <th>Stage 2</th>
+      <th>Stage 3</th>
+      <th>Stage 4</th>
+      <th>Stage 5</th>
+      <th>Stage 6</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Code reconstructing</td>
+      <td>Fill the missing data</td>
+      <td>Outlier detection</td>
+      <td>Feature selection</td>
+      <td>Model selection and hyper-param tuning</td>
+
+    </tr>
+  </tbody>
+</table>
+
