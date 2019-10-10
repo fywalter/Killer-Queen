@@ -1,7 +1,7 @@
 # Task 1
 
-Current stage: code reconstruction
-==================================
+Current stage: Filling Missing Data
+===================================
 
 Main schedual:
 ==============
