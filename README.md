@@ -1,4 +1,4 @@
-# Killer-Queen
+# Task 1
 
 Current stage: code reconstruction
 ==================================
