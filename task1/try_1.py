@@ -83,11 +83,11 @@ def fill_missing_data(data_x):
     """
     Fill Nan value in data of pd.DataFrame format
     :param data_x: feature or data in pd.DataFrame format
-    :return data_x_filled: filled data
+    :return data_x_filled: filled data in ndarray
     """
     print("Filling missing data...")
     data_x_filled = data_x.fillna(data_x.mean())
-    return data_x_filled
+    return from_csv_to_ndarray(data=data_x_filled)
 
 
 def from_csv_to_ndarray(data):
@@ -237,8 +237,7 @@ def main():
     print()
     print('***************By Killer Queen***************')
     data_x, data_y = load_data(x_path='./X_train.csv', y_path='./y_train.csv')
-    data_x_filled = fill_missing_data(data_x=data_x)
-    x_ndarray = from_csv_to_ndarray(data=data_x_filled)
+    x_ndarray = fill_missing_data(data_x=data_x)
     y_ndarray = from_csv_to_ndarray(data=data_y)
     x_ndarray = data_preprocessing(x_raw=x_ndarray)
     x_select, y_select, model_select = feature_selection(x_train=x_ndarray, y_train=y_ndarray)
