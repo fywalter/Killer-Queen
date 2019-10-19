@@ -95,20 +95,23 @@ def fill_missing_data(data_x, data_x_test, load_file=True):
     print("Filling missing data...")
     # ==================================================
     # Filling method: pandas median
-    # data_x_filled = data_x.fillna(data_x.median())
-    # data_x_test_filled = data_x_test.fillna(data_x_test.median())
-    # std = StandardScaler()
-    # x_concat = np.concatenate((from_csv_to_ndarray(data=data_x_filled),
-    #                            from_csv_to_ndarray(data=data_x_test_filled)), axis=0)
-    # x_after = std.fit_transform(x_concat)
-    # return x_after[:len(x_raw)], x_after[len(x_raw):]
+    """
+    data_x_filled = data_x.fillna(data_x.median())
+    data_x_test_filled = data_x_test.fillna(data_x_test.median())
+    std = StandardScaler()
+    x_concat = np.concatenate((from_csv_to_ndarray(data=data_x_filled),
+                               from_csv_to_ndarray(data=data_x_test_filled)), axis=0)
+    x_after = std.fit_transform(x_concat)
+    return x_after[:len(data_x_filled)], x_after[len(data_x_filled):]
+    """
+
     # ==================================================
 
     # ==================================================
     # Filling method: similarity matrix
     if load_file:
         return np.load('./x_filled.npy'), np.load('./x_test_filled.npy')
-    # Step 1: fill data using mean
+        # Step 1: fill data using mean
     data_x_filled = data_x.fillna(data_x.median())
     x_ori = from_csv_to_ndarray(data=data_x)
     x_filled = from_csv_to_ndarray(data=data_x_filled)
@@ -128,7 +131,7 @@ def fill_missing_data(data_x, data_x_test, load_file=True):
         similarity_matrix[similarity_matrix > 0.999] = 0
         similarity_matrix[similarity_matrix < 0] = 0
         for j in range(len(x_filled_concat)):
-            weighted_sum = np.sum(similarity_matrix[:, j].reshape([-1, 1]) * x_filled_concat, axis=0) /\
+            weighted_sum = np.sum(similarity_matrix[:, j].reshape([-1, 1]) * x_filled_concat, axis=0) / \
                            np.sum(similarity_matrix[:, j])
             x_filled_concat[j][missing_idx[j]] = weighted_sum[missing_idx[j]]
     np.save('x_filled.npy', x_filled_concat[:len(x_filled)])
