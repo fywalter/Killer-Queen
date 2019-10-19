@@ -4,6 +4,7 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold
 from sklearn.feature_selection import SelectFromModel
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 ###########Add different models here!!!!###########
@@ -61,33 +62,76 @@ models.append(model_XGBoostRegressor)
 ##########Model Adding Ends###########
 
 
-def load_data(x_path='./X_train.csv', y_path='./y_train.csv'):
+def load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_test.csv'):
     """
     Load data from .csv files
     :param x_path: relative path of x
     :param y_path: relative path of y
-    :return data_x, data_y: X, Y in pd.DataFrame format
+    :param x_test_path :relative path of x_test
+    :return data_x, data_y, data_x_test: X, Y, X_test in pd.DataFrame format
     """
     print()
-    print("Loading data from {} and {}".format(x_path, y_path))
+    print("Loading data from {}, {} and {}".format(x_path, y_path, x_test_path))
     data_x = pd.read_csv(x_path)
     data_y = pd.read_csv(y_path)
+    data_x_test = pd.read_csv(x_test_path)
     print('Data loaded, data_set Information:')
     print("x: {}".format(data_x.shape))
     print("y: {}".format(data_y.shape))
+    print("x_test: {}".format(data_x_test.shape))
     print()
-    return data_x, data_y
+    return data_x, data_y, data_x_test
 
 
-def fill_missing_data(data_x):
+def fill_missing_data(data_x, data_x_test):
     """
-    Fill Nan value in data of pd.DataFrame format
+    Fill Nan value in data of pd.DataFrame format.
+    !!! Normalization moved to this part
     :param data_x: feature or data in pd.DataFrame format
-    :return data_x_filled: filled data in ndarray
+    :param data_x_test: test feature or data in pd.DataFrame format
+    :return data_x_filled, data_x_test_filled: !!!normalized filled data in ndarray
     """
     print("Filling missing data...")
-    data_x_filled = data_x.fillna(data_x.mean())
-    return from_csv_to_ndarray(data=data_x_filled)
+    # ==================================================
+    # Filling method: pandas median
+    # data_x_filled = data_x.fillna(data_x.median())
+    # data_x_test_filled = data_x_test.fillna(data_x_test.median())
+    # std = StandardScaler()
+    # x_concat = np.concatenate((from_csv_to_ndarray(data=data_x_filled),
+    #                            from_csv_to_ndarray(data=data_x_test_filled)), axis=0)
+    # x_after = std.fit_transform(x_concat)
+    # return x_after[:len(x_raw)], x_after[len(x_raw):]
+    # ==================================================
+
+    # ==================================================
+    # Filling method: similarity matrix
+    # Step 1: fill data using mean
+    data_x_filled = data_x.fillna(data_x.median())
+    x_ori = from_csv_to_ndarray(data=data_x)
+    x_filled = from_csv_to_ndarray(data=data_x_filled)
+    data_x_test_filled = data_x_test.fillna(data_x_test.median())
+    x_test_ori = from_csv_to_ndarray(data=data_x_test)
+    x_test_filled = from_csv_to_ndarray(data=data_x_test_filled)
+    x_concat = np.concatenate((x_ori, x_test_ori), axis=0)
+    x_filled_concat = np.concatenate((x_filled, x_test_filled), axis=0)
+    missing_idx = np.isnan(x_concat)
+    # normalization
+    std = StandardScaler()
+    x_filled_concat = std.fit_transform(x_filled_concat)
+
+    # Step 2: fill using similarity matrix
+    for i in range(5):
+        similarity_matrix = cosine_similarity(x_filled_concat, x_filled_concat)
+        similarity_matrix[similarity_matrix > 0.999] = 0
+        similarity_matrix[similarity_matrix < 0] = 0
+        for j in range(len(x_filled_concat)):
+            weighted_sum = np.sum(similarity_matrix[:, j].reshape([-1, 1]) * x_filled_concat, axis=0) /\
+                           np.sum(similarity_matrix[:, j])
+            x_filled_concat[j][missing_idx[j]] = weighted_sum[missing_idx[j]]
+    np.save('x_filled.npy', x_filled_concat[:len(x_filled)])
+    np.save('x_test_filled.npy', x_filled_concat[len(x_filled):])
+    return x_filled_concat[:len(x_filled)], x_filled_concat[len(x_filled):]
+    # ==================================================
 
 
 def from_csv_to_ndarray(data):
@@ -104,24 +148,26 @@ def from_csv_to_ndarray(data):
         return ndarray[:, 1:]
 
 
-def data_preprocessing(x_raw):
+def data_preprocessing(x_raw, x_test_raw):
     """
     Data preprocessing including normalization or scaling, etc.
     :param x_raw: np.ndarray, data before preprocessing
-    :return x_after: data after preprocessing
+    :param x_test_raw: np.ndarray, test data before preprocessing
+    :return x_after, x_test_after: data after preprocessing
     """
     std = StandardScaler()
-    x_after = std.fit_transform(x_raw)
-    return x_after
+    x_concat = np.concatenate((x_raw, x_test_raw), axis=0)
+    x_after = std.fit_transform(x_concat)
+    return x_after[:len(x_raw)], x_after[len(x_raw):]
 
 
-def feature_selection(x_train, y_train):
+def feature_selection(x_train, y_train, x_test):
     """
     Select features based on training data(but actually we can use all data)
     :param x_train: features
     :param y_train: labels
-    :return x_selected, y_train, model_select: return selected feature and label with feature selection model
-    (sklearn.feature_selection.SelectFromModel)
+    :param x_test: test features
+    :return x_selected, y_train, x_test_selected: return selected feature and label
     """
     print()
     print("Selecting features...")
@@ -129,8 +175,9 @@ def feature_selection(x_train, y_train):
     clf_selec = linear_model.Lasso(alpha=0.1)
     model_select = SelectFromModel(clf_selec.fit(x_train, y_train), prefit=True)
     x_selected = model_select.transform(x_train)
+    x_test_select = model_select.transform(x_test)
     print("After feature selection: {}".format(x_selected.shape))
-    return x_selected, y_train, model_select
+    return x_selected, y_train, x_test_select
 
 
 def outlier_detection(x_raw, y_raw):
@@ -214,16 +261,11 @@ def get_model(x_all, y_all, model_idx):
     return model
 
 
-def predict_and_save_results(model, test_path, save_path, model_select):
+def predict_and_save_results(model, x_test, save_path):
     print()
-    print("Load test data from {}".format(test_path))
-    x_new = pd.read_csv(test_path)
-    x_new = fill_missing_data(x_new)
-    x_new = data_preprocessing(x_new)
-    x_new = model_select.transform(x_new)
-    y_pred = model.predict(x_new)
+    y_pred = model.predict(x_test)
     out = np.zeros((len(y_pred), 2))
-    ids = np.arange(0, len(x_new))
+    ids = np.arange(0, len(x_test))
     out[:, 0] = ids
     out[:, 1] = y_pred
     print("Prediction saved to {}".format(save_path))
@@ -233,14 +275,13 @@ def predict_and_save_results(model, test_path, save_path, model_select):
 def main():
     print()
     print('***************By Killer Queen***************')
-    data_x, data_y = load_data(x_path='./X_train.csv', y_path='./y_train.csv')
-    x_ndarray = fill_missing_data(data_x=data_x)
+    data_x, data_y, data_x_test = load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_test.csv')
+    x_ndarray, x_test_ndarray = fill_missing_data(data_x=data_x, data_x_test=data_x_test)
     y_ndarray = from_csv_to_ndarray(data=data_y)
-    x_ndarray = data_preprocessing(x_raw=x_ndarray)
-    x_select, y_select, model_select = feature_selection(x_train=x_ndarray, y_train=y_ndarray)
+    x_select, y_select, x_test_select = feature_selection(x_train=x_ndarray, y_train=y_ndarray, x_test=x_test_ndarray)
     x_clean, y_clean = outlier_detection(x_raw=x_select, y_raw=y_select)
     score_function = r2_score
-    find_best_model = False     # Change this to false and set a model_idx to train a specific model!!!
+    find_best_model = True     # Change this to false and set a model_idx to train a specific model!!!
     model_idx = 8
     if find_best_model:
         model_idx, best_model = train_evaluate_return_best_model(x_all=x_clean, y_all=y_clean, score_func=score_function)
@@ -248,8 +289,7 @@ def main():
         best_model = get_model(x_all=x_clean, y_all=y_clean, model_idx=model_idx)
     print()
     print("Using model: {}".format(model_heads[model_idx]))
-    predict_and_save_results(model=best_model, test_path='./X_test.csv',
-                             save_path='./y_test.csv', model_select=model_select)
+    predict_and_save_results(model=best_model, x_test=x_test_select, save_path='./y_test.csv')
 
 
 main()
