@@ -1,6 +1,6 @@
 # Task 1
 
-Current stage: Filling Missing Data
+Current stage: Outlier detection
 ===================================
 
 Main schedual:
