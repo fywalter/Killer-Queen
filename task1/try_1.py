@@ -219,14 +219,11 @@ def predict_and_save_results(model, test_path, save_path, model_select):
     print("Load test data from {}".format(test_path))
     x_new = pd.read_csv(test_path)
     x_new = fill_missing_data(x_new)
-    x_new.head()
-    ndarray = x_new.values
-    ids = ndarray[:, 0]
-    x_new = ndarray[:, 1:]
     x_new = data_preprocessing(x_new)
     x_new = model_select.transform(x_new)
     y_pred = model.predict(x_new)
     out = np.zeros((len(y_pred), 2))
+    ids = np.arange(0, len(x_new))
     out[:, 0] = ids
     out[:, 1] = y_pred
     print("Prediction saved to {}".format(save_path))
@@ -243,8 +240,8 @@ def main():
     x_select, y_select, model_select = feature_selection(x_train=x_ndarray, y_train=y_ndarray)
     x_clean, y_clean = outlier_detection(x_raw=x_select, y_raw=y_select)
     score_function = r2_score
-    find_best_model = True     # Change this to false and set a model_idx to train a specific model!!!
-    model_idx = 9
+    find_best_model = False     # Change this to false and set a model_idx to train a specific model!!!
+    model_idx = 8
     if find_best_model:
         model_idx, best_model = train_evaluate_return_best_model(x_all=x_clean, y_all=y_clean, score_func=score_function)
     else:
