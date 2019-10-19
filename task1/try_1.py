@@ -83,12 +83,13 @@ def load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_t
     return data_x, data_y, data_x_test
 
 
-def fill_missing_data(data_x, data_x_test):
+def fill_missing_data(data_x, data_x_test, load_file=True):
     """
     Fill Nan value in data of pd.DataFrame format.
     !!! Normalization moved to this part
     :param data_x: feature or data in pd.DataFrame format
     :param data_x_test: test feature or data in pd.DataFrame format
+    :param load_file: Load from pre-filled data?
     :return data_x_filled, data_x_test_filled: !!!normalized filled data in ndarray
     """
     print("Filling missing data...")
@@ -105,6 +106,8 @@ def fill_missing_data(data_x, data_x_test):
 
     # ==================================================
     # Filling method: similarity matrix
+    if load_file:
+        return np.load('./x_filled.npy'), np.load('./x_test_filled.npy')
     # Step 1: fill data using mean
     data_x_filled = data_x.fillna(data_x.median())
     x_ori = from_csv_to_ndarray(data=data_x)
