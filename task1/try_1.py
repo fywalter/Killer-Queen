@@ -5,6 +5,7 @@ from sklearn.model_selection import KFold
 from sklearn.feature_selection import SelectFromModel
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
+import tqdm
 
 
 ###########Add different models here!!!!###########
@@ -83,7 +84,7 @@ def load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_t
     return data_x, data_y, data_x_test
 
 
-def fill_missing_data(data_x, data_x_test, load_file=True):
+def fill_missing_data(data_x, data_x_test, load_file=False, filling_method="random_forest"):
     """
     Fill Nan value in data of pd.DataFrame format.
     !!! Normalization moved to this part
@@ -92,52 +93,72 @@ def fill_missing_data(data_x, data_x_test, load_file=True):
     :param load_file: Load from pre-filled data?
     :return data_x_filled, data_x_test_filled: !!!normalized filled data in ndarray
     """
-    print("Filling missing data...")
-    # ==================================================
-    # Filling method: pandas median
-    """
-    data_x_filled = data_x.fillna(data_x.median())
-    data_x_test_filled = data_x_test.fillna(data_x_test.median())
-    std = StandardScaler()
-    x_concat = np.concatenate((from_csv_to_ndarray(data=data_x_filled),
-                               from_csv_to_ndarray(data=data_x_test_filled)), axis=0)
-    x_after = std.fit_transform(x_concat)
-    return x_after[:len(data_x_filled)], x_after[len(data_x_filled):]
-    """
+    print("Filling missing data with {}".format(filling_method))
+    if filling_method == 'pandas_median':
+        data_x_filled = data_x.fillna(data_x.median())
+        data_x_test_filled = data_x_test.fillna(data_x_test.median())
+        std = StandardScaler()
+        x_concat = np.concatenate((from_csv_to_ndarray(data=data_x_filled),
+                                   from_csv_to_ndarray(data=data_x_test_filled)), axis=0)
+        x_after = std.fit_transform(x_concat)
+        return x_after[:len(data_x_filled)], x_after[len(data_x_filled):]
+    elif filling_method == 'similarity_matrix':
+        if load_file:
+            return np.load('./x_filled.npy'), np.load('./x_test_filled.npy')
+            # Step 1: fill data using mean
+        data_x_filled = data_x.fillna(data_x.median())
+        x_ori = from_csv_to_ndarray(data=data_x)
+        x_filled = from_csv_to_ndarray(data=data_x_filled)
+        data_x_test_filled = data_x_test.fillna(data_x_test.median())
+        x_test_ori = from_csv_to_ndarray(data=data_x_test)
+        x_test_filled = from_csv_to_ndarray(data=data_x_test_filled)
+        x_concat = np.concatenate((x_ori, x_test_ori), axis=0)
+        x_filled_concat = np.concatenate((x_filled, x_test_filled), axis=0)
+        missing_idx = np.isnan(x_concat)
+        # normalization
+        std = StandardScaler()
+        x_filled_concat = std.fit_transform(x_filled_concat)
 
-    # ==================================================
-
-    # ==================================================
-    # Filling method: similarity matrix
-    if load_file:
-        return np.load('./x_filled.npy'), np.load('./x_test_filled.npy')
-        # Step 1: fill data using mean
-    data_x_filled = data_x.fillna(data_x.median())
-    x_ori = from_csv_to_ndarray(data=data_x)
-    x_filled = from_csv_to_ndarray(data=data_x_filled)
-    data_x_test_filled = data_x_test.fillna(data_x_test.median())
-    x_test_ori = from_csv_to_ndarray(data=data_x_test)
-    x_test_filled = from_csv_to_ndarray(data=data_x_test_filled)
-    x_concat = np.concatenate((x_ori, x_test_ori), axis=0)
-    x_filled_concat = np.concatenate((x_filled, x_test_filled), axis=0)
-    missing_idx = np.isnan(x_concat)
-    # normalization
-    std = StandardScaler()
-    x_filled_concat = std.fit_transform(x_filled_concat)
-
-    # Step 2: fill using similarity matrix
-    for i in range(5):
-        similarity_matrix = cosine_similarity(x_filled_concat, x_filled_concat)
-        similarity_matrix[similarity_matrix > 0.999] = 0
-        similarity_matrix[similarity_matrix < 0] = 0
-        for j in range(len(x_filled_concat)):
-            weighted_sum = np.sum(similarity_matrix[:, j].reshape([-1, 1]) * x_filled_concat, axis=0) / \
-                           np.sum(similarity_matrix[:, j])
-            x_filled_concat[j][missing_idx[j]] = weighted_sum[missing_idx[j]]
-    np.save('x_filled.npy', x_filled_concat[:len(x_filled)])
-    np.save('x_test_filled.npy', x_filled_concat[len(x_filled):])
-    return x_filled_concat[:len(x_filled)], x_filled_concat[len(x_filled):]
-    # ==================================================
+        # Step 2: fill using similarity matrix
+        for i in range(5):
+            similarity_matrix = cosine_similarity(x_filled_concat, x_filled_concat)
+            similarity_matrix[similarity_matrix > 0.999] = 0
+            similarity_matrix[similarity_matrix < 0] = 0
+            for j in tqdm.tqdm(range(len(x_filled_concat))):
+                weighted_sum = np.sum(similarity_matrix[:, j].reshape([-1, 1]) * x_filled_concat, axis=0) / \
+                               np.sum(similarity_matrix[:, j])
+                x_filled_concat[j][missing_idx[j]] = weighted_sum[missing_idx[j]]
+        np.save('x_filled.npy', x_filled_concat[:len(x_filled)])
+        np.save('x_test_filled.npy', x_filled_concat[len(x_filled):])
+        return x_filled_concat[:len(x_filled)], x_filled_concat[len(x_filled):]
+    elif filling_method == "random_forest":
+        if load_file:
+            return np.load('./x_filled_rf.npy'), np.load('./x_test_filled_rf.npy')
+        data_x_filled = data_x.fillna(data_x.median())
+        x_ori = from_csv_to_ndarray(data=data_x)
+        x_filled = from_csv_to_ndarray(data=data_x_filled)
+        data_x_test_filled = data_x_test.fillna(data_x_test.median())
+        x_test_ori = from_csv_to_ndarray(data=data_x_test)
+        x_test_filled = from_csv_to_ndarray(data=data_x_test_filled)
+        x_concat = np.concatenate((x_ori, x_test_ori), axis=0)
+        x_filled_concat = np.concatenate((x_filled, x_test_filled), axis=0)
+        missing_idx = np.isnan(x_concat)
+        # normalization
+        std = StandardScaler()
+        x_filled_concat = std.fit_transform(x_filled_concat)
+        feature_len = x_filled_concat.shape[1]
+        for i in tqdm.tqdm(range(feature_len)):
+            train = x_filled_concat[missing_idx[:, i] == 0]
+            test = x_filled_concat[missing_idx[:, i] == 1]
+            x_train = train[:, np.concatenate((np.arange(i), np.arange(i+1, feature_len)))]
+            y_train = train[:, i]
+            x_test = test[:, np.concatenate((np.arange(i), np.arange(i+1, feature_len)))]
+            rfr = ensemble.RandomForestRegressor(n_estimators=20)
+            rfr.fit(x_train, y_train)
+            x_filled_concat[missing_idx[:, i] == 1, i] = rfr.predict(x_test)
+        np.save('x_filled_rf.npy', x_filled_concat[:len(x_filled)])
+        np.save('x_test_filled_rf.npy', x_filled_concat[len(x_filled):])
+        return x_filled_concat[:len(x_filled)], x_filled_concat[len(x_filled):]
 
 
 def from_csv_to_ndarray(data):
@@ -282,7 +303,8 @@ def main():
     print()
     print('***************By Killer Queen***************')
     data_x, data_y, data_x_test = load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_test.csv')
-    x_ndarray, x_test_ndarray = fill_missing_data(data_x=data_x, data_x_test=data_x_test)
+    x_ndarray, x_test_ndarray = fill_missing_data(data_x=data_x, data_x_test=data_x_test,
+                                                  load_file=False, filling_method="random_forest")
     y_ndarray = from_csv_to_ndarray(data=data_y)
     x_select, y_select, x_test_select = feature_selection(x_train=x_ndarray, y_train=y_ndarray, x_test=x_test_ndarray)
     x_clean, y_clean = outlier_detection(x_raw=x_select, y_raw=y_select)
