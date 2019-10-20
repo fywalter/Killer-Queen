@@ -84,13 +84,14 @@ def load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_t
     return data_x, data_y, data_x_test
 
 
-def fill_missing_data(data_x, data_x_test, load_file=False, filling_method="random_forest"):
+def fill_missing_data(data_x, data_x_test, load_file=True, filling_method="random_forest"):
     """
     Fill Nan value in data of pd.DataFrame format.
     !!! Normalization moved to this part
     :param data_x: feature or data in pd.DataFrame format
     :param data_x_test: test feature or data in pd.DataFrame format
     :param load_file: Load from pre-filled data?
+    :param filling_method: filling method
     :return data_x_filled, data_x_test_filled: !!!normalized filled data in ndarray
     """
     print("Filling missing data with {}".format(filling_method))
@@ -304,7 +305,7 @@ def main():
     print('***************By Killer Queen***************')
     data_x, data_y, data_x_test = load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_test.csv')
     x_ndarray, x_test_ndarray = fill_missing_data(data_x=data_x, data_x_test=data_x_test,
-                                                  load_file=False, filling_method="random_forest")
+                                                  load_file=True, filling_method="random_forest")
     y_ndarray = from_csv_to_ndarray(data=data_y)
     x_select, y_select, x_test_select = feature_selection(x_train=x_ndarray, y_train=y_ndarray, x_test=x_test_ndarray)
     x_clean, y_clean = outlier_detection(x_raw=x_select, y_raw=y_select)
