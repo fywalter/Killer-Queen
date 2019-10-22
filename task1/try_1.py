@@ -6,6 +6,21 @@ from sklearn.feature_selection import SelectFromModel
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
 import tqdm
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import IsolationForest
+
+from pyod.utils.utility import standardizer
+from pyod.models.abod import ABOD
+from pyod.models.cblof import CBLOF
+from pyod.models.feature_bagging import FeatureBagging
+from pyod.models.hbos import HBOS
+from pyod.models.iforest import IForest
+from pyod.models.knn import KNN
+from pyod.models.lof import LOF
+from pyod.models.mcd import MCD
+from pyod.models.ocsvm import OCSVM
+from pyod.models.pca import PCA
+from pyod.models.xgbod import XGBOD
 
 
 ###########Add different models here!!!!###########
@@ -42,7 +57,7 @@ model_heads.append("AdaBoost Regression\t\t\t\t")
 models.append(model_AdaBoostRegressor)
 
 from sklearn import ensemble    # 6
-model_GradientBoostingRegressor = ensemble.GradientBoostingRegressor(n_estimators=150)
+model_GradientBoostingRegressor = ensemble.GradientBoostingRegressor()
 model_heads.append("Gradient Boosting Regression\t")
 models.append(model_GradientBoostingRegressor)
 
@@ -57,7 +72,7 @@ model_heads.append("ExtraTree Regression\t\t\t")
 models.append(model_ExtraTreeRegressor)
 
 import xgboost as xgb       # 9
-model_XGBoostRegressor = xgb.XGBRegressor(n_estimators=160)
+model_XGBoostRegressor = xgb.XGBRegressor()
 model_heads.append("XGBoost Regression\t\t\t\t")
 models.append(model_XGBoostRegressor)
 ##########Model Adding Ends###########
@@ -84,6 +99,14 @@ def load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_t
     return data_x, data_y, data_x_test
 
 
+def filter_low_var_feature(x, threshold=1e-10):
+    x += 1e-7
+    x_var = np.var(x / np.mean(x, axis=0), axis=0)
+    x_idx = x_var > threshold
+    x -= 1e-7
+    return x[:, x_idx], x_idx
+
+
 def fill_missing_data(data_x, data_x_test, load_file=True, filling_method="random_forest"):
     """
     Fill Nan value in data of pd.DataFrame format.
@@ -101,7 +124,8 @@ def fill_missing_data(data_x, data_x_test, load_file=True, filling_method="rando
         std = StandardScaler()
         x_concat = np.concatenate((from_csv_to_ndarray(data=data_x_filled),
                                    from_csv_to_ndarray(data=data_x_test_filled)), axis=0)
-        x_after = std.fit_transform(x_concat)
+        x_filtered, _ = filter_low_var_feature(x_concat, 1e-10)
+        x_after = std.fit_transform(x_filtered)
         return x_after[:len(data_x_filled)], x_after[len(data_x_filled):]
     elif filling_method == 'similarity_matrix':
         if load_file:
@@ -118,10 +142,14 @@ def fill_missing_data(data_x, data_x_test, load_file=True, filling_method="rando
         missing_idx = np.isnan(x_concat)
         # normalization
         std = StandardScaler()
+
+        x_filled_concat, idx = filter_low_var_feature(x_filled_concat, 1e-10)
         x_filled_concat = std.fit_transform(x_filled_concat)
 
+        missing_idx = missing_idx[:, idx]
+
         # Step 2: fill using similarity matrix
-        for i in range(5):
+        for i in range(3):
             similarity_matrix = cosine_similarity(x_filled_concat, x_filled_concat)
             similarity_matrix[similarity_matrix > 0.999] = 0
             similarity_matrix[similarity_matrix < 0] = 0
@@ -134,7 +162,7 @@ def fill_missing_data(data_x, data_x_test, load_file=True, filling_method="rando
         return x_filled_concat[:len(x_filled)], x_filled_concat[len(x_filled):]
     elif filling_method == "random_forest":
         if load_file:
-            return np.load('./x_filled_rf.npy'), np.load('./x_test_filled_rf.npy')
+            return np.load('./x_filled_rf2.npy'), np.load('./x_test_filled_rf2.npy')
         data_x_filled = data_x.fillna(data_x.median())
         x_ori = from_csv_to_ndarray(data=data_x)
         x_filled = from_csv_to_ndarray(data=data_x_filled)
@@ -146,19 +174,23 @@ def fill_missing_data(data_x, data_x_test, load_file=True, filling_method="rando
         missing_idx = np.isnan(x_concat)
         # normalization
         std = StandardScaler()
+        x_filled_concat, idx = filter_low_var_feature(x_filled_concat, 1e-10)
         x_filled_concat = std.fit_transform(x_filled_concat)
+
+        missing_idx = missing_idx[:, idx]
         feature_len = x_filled_concat.shape[1]
-        for i in tqdm.tqdm(range(feature_len)):
-            train = x_filled_concat[missing_idx[:, i] == 0]
-            test = x_filled_concat[missing_idx[:, i] == 1]
-            x_train = train[:, np.concatenate((np.arange(i), np.arange(i+1, feature_len)))]
-            y_train = train[:, i]
-            x_test = test[:, np.concatenate((np.arange(i), np.arange(i+1, feature_len)))]
-            rfr = ensemble.RandomForestRegressor(n_estimators=20)
-            rfr.fit(x_train, y_train)
-            x_filled_concat[missing_idx[:, i] == 1, i] = rfr.predict(x_test)
-        np.save('x_filled_rf.npy', x_filled_concat[:len(x_filled)])
-        np.save('x_test_filled_rf.npy', x_filled_concat[len(x_filled):])
+        for j in range(2):
+            for i in tqdm.tqdm(range(feature_len)):
+                train = x_filled_concat[missing_idx[:, i] == 0]
+                test = x_filled_concat[missing_idx[:, i] == 1]
+                x_train = train[:, np.concatenate((np.arange(i), np.arange(i + 1, feature_len)))]
+                y_train = train[:, i]
+                x_test = test[:, np.concatenate((np.arange(i), np.arange(i + 1, feature_len)))]
+                rfr = ensemble.RandomForestRegressor(n_estimators=20)
+                rfr.fit(x_train, y_train)
+                x_filled_concat[missing_idx[:, i] == 1, i] = rfr.predict(x_test)
+        np.save('x_filled_rf2.npy', x_filled_concat[:len(x_filled)])
+        np.save('x_test_filled_rf2.npy', x_filled_concat[len(x_filled):])
         return x_filled_concat[:len(x_filled)], x_filled_concat[len(x_filled):]
 
 
@@ -208,6 +240,11 @@ def feature_selection(x_train, y_train, x_test):
     return x_selected, y_train, x_test_select
 
 
+def del_rowsorcolumns(X_in, idx, axis):
+    X_out = np.delete(X_in, idx, axis=axis)
+    return X_out
+
+
 def outlier_detection(x_raw, y_raw):
     """
     Filter all ourlier points
@@ -219,11 +256,39 @@ def outlier_detection(x_raw, y_raw):
     print()
     print("Detecting outliers...")
     print("Before outlier detection: {}".format(x_raw.shape))
-    x_clean = x_raw
-    y_clean = y_raw
+    outliers_fraction = 0.04
+    random_state = np.random.RandomState(42)
+    # all outlier detection method candidate list as follows
+    classifiers = {'Angle-based Outlier Detector (ABOD)': ABOD(contamination=outliers_fraction),
+                   'Cluster-based Local Outlier Factor': CBLOF(contamination=outliers_fraction, check_estimator=False,
+                                                               random_state=random_state),
+                   'Feature Bagging': FeatureBagging(contamination=outliers_fraction, random_state=random_state),
+                   'Histogram-base Outlier Detection (HBOS)': HBOS(contamination=outliers_fraction),
+                   'Isolation Forest': IForest(contamination=outliers_fraction, random_state=random_state),
+                   'K Nearest Neighbors (KNN)': KNN(contamination=outliers_fraction),
+                   'Local Outlier Factor (LOF)': LOF(contamination=outliers_fraction),
+                   'Minimum Covariance Determinant (MCD)': MCD(contamination=outliers_fraction,
+                                                               random_state=random_state),
+                   'One-class SVM (OCSVM)': OCSVM(contamination=outliers_fraction),
+                   'Principal Component Analysis (PCA)': PCA(contamination=outliers_fraction,
+                                                             random_state=random_state),
+                   'Improving Supervised Outlier Detection with Unsupervised Representation Learning': XGBOD(contamination=outliers_fraction),
+                   }
+    clf_name = 'Isolation Forest'
+    clf = IForest(contamination=outliers_fraction, random_state=random_state)
+    # clf_name = 'Angle-based Outlier Detector (ABOD)'
+    # clf = ABOD(contamination=outliers_fraction, method='default')
+    clf.fit(x_raw)
+    y_pred = clf.predict(x_raw)
+    # for pyod, 1 means outliers and 0 means inliers
+    # for sklearn,  -1 means outliers and 1 means inliers
+    idx_y_pred = [i for i in range(0, 1212) if y_pred[i] == 1]
+    x_clean = del_rowsorcolumns(x_raw, idx_y_pred, axis=0)
+    y_clean = del_rowsorcolumns(y_raw, idx_y_pred, axis=0)
     print("After outlier detection: {}".format(x_clean.shape))
-    assert(x_clean.shape[0]==y_clean.shape[0])
+    assert (x_clean.shape[0] == y_clean.shape[0])
     return x_clean, y_clean
+    # return y_pred, idx_y_pred
 
 
 def try_different_method(model, x_train, y_train, x_test, y_test, score_func):
@@ -238,8 +303,9 @@ def try_different_method(model, x_train, y_train, x_test, y_test, score_func):
     :return score:
     """
     model.fit(x_train, y_train)
-    result = model.predict(x_test)
-    return score_func(y_test, result)
+    result_test = model.predict(x_test)
+    result_train = model.predict(x_train)
+    return score_func(y_test, result_test), score_func(y_train, result_train)
 
 
 def train_evaluate_return_best_model(x_all, y_all, score_func=r2_score):
@@ -256,17 +322,21 @@ def train_evaluate_return_best_model(x_all, y_all, score_func=r2_score):
     best_score = 0
     best_idx = 0
     for (model_idx, model) in enumerate(models):
-        score_mean = 0
+        score_mean_test = 0
+        score_mean_train = 0
         for train_idx, test_idx in kf.split(x_all):
             x_train = x_all[train_idx]
             y_train = y_all[train_idx]
             x_test = x_all[test_idx]
             y_test = y_all[test_idx]
-            score_mean += try_different_method(model, x_train, y_train, x_test, y_test, score_func)
-        score_mean /= 5
-        print("{} \t score: {}".format(model_heads[model_idx], score_mean))
-        if best_score < score_mean:
-            best_score = score_mean
+            score_test, score_train = try_different_method(model, x_train, y_train, x_test, y_test, score_func)
+            score_mean_test+=score_test
+            score_mean_train+=score_train
+        score_mean_test /= 5
+        score_mean_train /= 5
+        print("{} \t score train: {}, score test: {}".format(model_heads[model_idx], score_mean_train, score_mean_test))
+        if best_score < score_mean_test:
+            best_score = score_mean_test
             best_idx = model_idx
     print("Training done")
     print("Best model: {}\t Score: {}".format(model_heads[best_idx], best_score))
@@ -305,17 +375,17 @@ def main():
     print('***************By Killer Queen***************')
     data_x, data_y, data_x_test = load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_test.csv')
     x_ndarray, x_test_ndarray = fill_missing_data(data_x=data_x, data_x_test=data_x_test,
-                                                  load_file=True, filling_method="random_forest")
+                                                  load_file=True, filling_method="pandas_median")
     y_ndarray = from_csv_to_ndarray(data=data_y)
-    x_select, y_select, x_test_select = feature_selection(x_train=x_ndarray, y_train=y_ndarray, x_test=x_test_ndarray)
-    x_clean, y_clean = outlier_detection(x_raw=x_select, y_raw=y_select)
+    x_clean, y_clean = outlier_detection(x_raw=x_ndarray, y_raw=y_ndarray)
+    x_select, y_select, x_test_select = feature_selection(x_train=x_clean, y_train=y_clean, x_test=x_test_ndarray)
     score_function = r2_score
     find_best_model = True     # Change this to false and set a model_idx to train a specific model!!!
     model_idx = 8
     if find_best_model:
-        model_idx, best_model = train_evaluate_return_best_model(x_all=x_clean, y_all=y_clean, score_func=score_function)
+        model_idx, best_model = train_evaluate_return_best_model(x_all=x_select, y_all=y_select, score_func=score_function)
     else:
-        best_model = get_model(x_all=x_clean, y_all=y_clean, model_idx=model_idx)
+        best_model = get_model(x_all=x_select, y_all=y_select, model_idx=model_idx)
     print()
     print("Using model: {}".format(model_heads[model_idx]))
     predict_and_save_results(model=best_model, x_test=x_test_select, save_path='./y_test.csv')
