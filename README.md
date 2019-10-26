@@ -3,7 +3,7 @@
 Current stage: Hyper-params tuning
 ===================================
 
-Best result:0.729
+Best result:0.7389
 =================
 
 Best Params:
@@ -21,8 +21,8 @@ Best Params:
   <tbody>
     <tr>
       <td>Random forest</td>
-      <td>150</td>
-      <td>122 (lasso selection with alpha 0.007)</td>
+      <td>200</td>
+      <td>126 (lasso selection with alpha 0.02)</td>
       <td>Ensemble</td>
       <td>Ask Chen Le</td>
     </tr>
