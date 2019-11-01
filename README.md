@@ -8,12 +8,14 @@ References:
 https://www.kaggle.com/c/bnp-paribas-cardif-claims-management/discussion/19240#110095
 https://www.kaggle.com/c/bnp-paribas-cardif-claims-management/discussion/20247#latest-356655
 https://www.kaggle.com/c/bnp-paribas-cardif-claims-management/discussion/20258#latest-133476
-https://github.com/diefimov/santander_2016/blob/master/README.pdf
 https://www.kaggle.com/c/telstra-recruiting-network/discussion/19239#latest-381687
 https://www.kaggle.com/c/prudential-life-insurance-assessment/discussion/19003#latest-229720
-https://www.kaggle.com/c/mlsp-2014-mri/discussion/9854#latest-568751
 https://www.kaggle.com/c/otto-group-product-classification-challenge/discussion/14335#latest-622005
 https://www.kaggle.com/c/airbnb-recruiting-new-user-bookings/discussion/18918#latest-627461
+https://www.kaggle.com/c/mlsp-2014-mri/discussion/9854#latest-568751
+https://github.com/diefimov/santander_2016/blob/master/README.pdf
+
+
 
 
 # Task 1
