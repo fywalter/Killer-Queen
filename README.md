@@ -17,8 +17,8 @@ Main schedual:
   <tbody>
     <tr>
       <td>Code reconstructing</td>
-      <td>Feature selection</td>
       <td>Deal with imbalanced-data</td>
+      <td>Feature selection</td>
       <td>Model selection and hyper-param tuning</td>
     </tr>
   </tbody>
