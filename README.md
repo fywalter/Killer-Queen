@@ -3,6 +3,27 @@
 Current stage: Reading
 ===================================
 
+Main schedual:
+==============
+<table>
+  <thead>
+    <tr>
+      <th>Stage 1</th>
+      <th>Stage 2</th>
+      <th>Stage 3</th>
+      <th>Stage 4</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Code reconstructing</td>
+      <td>Feature selection</td>
+      <td>Deal with imbalanced-data</td>
+      <td>Model selection and hyper-param tuning</td>
+    </tr>
+  </tbody>
+</table>
+
 References:
 =================
 https://www.kaggle.com/c/bnp-paribas-cardif-claims-management/discussion/19240#110095
