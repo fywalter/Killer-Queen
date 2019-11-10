@@ -4,6 +4,8 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.feature_selection import SelectFromModel
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import balanced_accuracy_score
 import tqdm
 import matplotlib.pyplot as plt  # Matlab-style plotting
 import seaborn as sns
@@ -25,7 +27,10 @@ def bas(y_pred, y_true):
     for i in range(len(y_pred)):
         class_num[y_true[i]] += 1
         corrects[y_true[i]] += (y_true[i] == y_pred[i])
-    return np.sum(corrects/class_num)/3
+    #BMAC = balanced_accuracy_score(y_ture, y_pred)
+    BMAC = balanced_accuracy_score(y_true, y_pred)
+    #return np.sum(corrects/class_num)/3
+    return BMAC
 
 
 def load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_test.csv'):
@@ -86,6 +91,13 @@ def over_sampling(x_train, y_train):
     print("#Sample in Class 0: {}".format(class0_num))
     print("#Sample in Class 1: {}".format(class1_num))
     print("#Sample in Class 2: {}".format(class2_num))
+    # Using SMOTE: https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.SMOTE.html
+    # an Over-sampling approach
+    # Over sampling on training and validation data
+    from imblearn.over_sampling import SMOTE
+    sm = SMOTE(sampling_strategy='auto', random_state=20)
+    x_train , y_train = sm.fit_resample(x_train, y_train)
+    #X_train, X_val, y_train, y_val = train_test_split(X_train,y,test_size=0.2,random_state=7)
     x_out = x_train
     y_out = y_train
 
@@ -178,7 +190,9 @@ def main():
     if do_over_sampling:
         x_train, y_train = over_sampling(x_train, y_train)
     x_train, y_train, x_test = select_feature(x_train, y_train, x_test)
-    model = evaluate_model(model_XGBoostClassifier, x_train, y_train)
+    # Possible Options: LogisticRegression, XGBoost, neurual network....
+    chosen_model = LogisticRegression(solver='liblinear',multi_class='auto')
+    model = evaluate_model(chosen_model, x_train, y_train)
     prediction = model.predict(x_test)
     # show correlation heat map
     """
