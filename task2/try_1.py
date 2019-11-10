@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
+import argparse
 from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.feature_selection import SelectFromModel
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
+from sklearn.model_selection import train_test_split
 import tqdm
 import matplotlib.pyplot as plt  # Matlab-style plotting
 import seaborn as sns
@@ -17,10 +19,27 @@ def ignore_warn(*args, **kwargs):
     pass
 warnings.warn = ignore_warn #ignore annoying warning (from sklearn and seaborn)
 
-import xgboost as xgb
-model_XGBoostClassifier = xgb.XGBClassifier()
+#import xgboost as xgb
+#model_XGBoostClassifier = xgb.XGBClassifier()
 
+# One Hot Encoder
+def to_one_hot(sequences, dimension):
+    results = np.zeros((len(sequences), dimension))
+    for i, sequence in enumerate(sequences):
+        results[i, sequence] = 1
+    return results
 
+def network(feature_dimension):
+    from keras import models 
+    from keras import layers
+    model = models.Sequential()
+    model.add(Dense(32, activation='relu', input_shape=feature_dimension))
+    model.add(Dense(3,activation='softmax'))
+    model.compile(optimizer='rmsprop',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+    
 def bas(y_pred, y_true):
     corrects = np.zeros(3)
     class_num = np.zeros(3)
@@ -163,8 +182,8 @@ def evaluate_model(model, x_all, y_all):
         score_mean_test += score_test
         score_mean_train += score_train
 
-    #score_mean_test /= n_folds
-    #score_mean_train /= n_folds
+    score_mean_test /= n_folds
+    score_mean_train /= n_folds
     print("Mean score on test set: {}".format(score_mean_test))
     print("Mean score on train set: {}".format(score_mean_train))
     model.fit(x_all, y_all)
@@ -174,26 +193,40 @@ def evaluate_model(model, x_all, y_all):
 def main():
     print()
     print('***************By Killer Queen***************')
-
+    boolean = lambda x: bool(['False', 'True'].index(x))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--method', default='nn', help="choose models options:nn, xgboost, LogisticRegression")
+    parser.add_argument('--Is_oversampling',type=boolean, default='True', help="If over sampling")
+    opt = parser.parse_args()
     # configs:
     X_train_dir = './data/X_train.csv'
     y_train_dir = './data/y_train.csv'
     X_test_dir = './data/X_test.csv'
     y_pred_save_dir = './y_test_try.csv'
-    do_over_sampling = True
     data_x, data_y, data_x_test = load_data(x_path=X_train_dir, y_path=y_train_dir, x_test_path=X_test_dir)
     test_ID = data_x_test['id']
     y_train = from_csv_to_ndarray(data=data_y)
     x_train = from_csv_to_ndarray(data=data_x)
     x_test = from_csv_to_ndarray(data=data_x_test)
     x_train, x_test = data_preprocessing(x_train, x_test)   # Normalizaiton and ...
-    if do_over_sampling:
+    if opt.Is_oversampling:
         x_train, y_train = over_sampling(x_train, y_train)
     x_train, y_train, x_test = select_feature(x_train, y_train, x_test)
     # Possible Options: LogisticRegression, XGBoost, neurual network....
-    chosen_model = LogisticRegression(solver='liblinear',multi_class='auto')
-    model = evaluate_model(chosen_model, x_train, y_train)
+    if opt.method == 'nn':
+        X_train, X_val, y_train, y_val = train_test_split(x_train,y_train,test_size=0.1,random_state=7)
+        one_hot_label = to_one_hot(y_train,3)
+        model = network(1000)
+        model.fit(X_train, one_hot_label, epochs=10, batch_size=32, validation_data=(X_val, y_val))
+    else:
+        if opt.method == 'LogisticRegression':
+            chosen_model = LogisticRegression(solver='liblinear',multi_class='auto',class_weight='balanced')
+        elif opt.method == 'xgboost':
+            chosen_model = model_XGBoostClassifier
+        model = evaluate_model(chosen_model, x_train, y_train)
     prediction = model.predict(x_test)
+    # Neural Network Approach
+
     # show correlation heat map
     """
     train = np.concatenate((x_select, y_select.reshape((-1, 1))), axis=1)
