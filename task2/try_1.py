@@ -9,6 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.model_selection import train_test_split
 import tqdm
+import keras
 import matplotlib.pyplot as plt  # Matlab-style plotting
 import seaborn as sns
 color = sns.color_palette()
@@ -32,8 +33,9 @@ def to_one_hot(sequences, dimension):
 def network(feature_dimension):
     from keras import models 
     from keras import layers
+    from keras.layers import Dense, Activation
     model = models.Sequential()
-    model.add(Dense(32, activation='relu', input_shape=feature_dimension))
+    model.add(Dense(64, activation='relu', input_dim=feature_dimension))
     model.add(Dense(3,activation='softmax'))
     model.compile(optimizer='rmsprop',
                   loss='categorical_crossentropy',
@@ -214,17 +216,23 @@ def main():
     x_train, y_train, x_test = select_feature(x_train, y_train, x_test)
     # Possible Options: LogisticRegression, XGBoost, neurual network....
     if opt.method == 'nn':
-        X_train, X_val, y_train, y_val = train_test_split(x_train,y_train,test_size=0.1,random_state=7)
-        one_hot_label = to_one_hot(y_train,3)
+        X_train, X_val, y_train, y_val = train_test_split(x_train,y_train,test_size=0.2,random_state=7)
+        one_hot_labels = keras.utils.to_categorical(y_train, num_classes=3)
+        one_hot_label_val = keras.utils.to_categorical(y_val, num_classes=3)
+        print(one_hot_labels)
+        print(X_train.shape)
+        print(y_train.shape)
+        #one_hot_label = to_one_hot(y_train,3)
         model = network(1000)
-        model.fit(X_train, one_hot_label, epochs=10, batch_size=32, validation_data=(X_val, y_val))
+        model.fit(X_train, one_hot_labels, epochs=15, batch_size=64, validation_data=(X_val, one_hot_label_val))
+        prediction = model.predict_classes(x_test)
     else:
         if opt.method == 'LogisticRegression':
             chosen_model = LogisticRegression(solver='liblinear',multi_class='auto',class_weight='balanced')
         elif opt.method == 'xgboost':
             chosen_model = model_XGBoostClassifier
         model = evaluate_model(chosen_model, x_train, y_train)
-    prediction = model.predict(x_test)
+        prediction = model.predict(x_test)
     # Neural Network Approach
 
     # show correlation heat map
