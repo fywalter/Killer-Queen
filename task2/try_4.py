@@ -56,16 +56,17 @@ def network(feature_dimension):
 
 def network2(feature_dimension):
     models = Sequential()
+    #W_regularizer=l2(0.0001)
     models.add(Dense(256, input_dim=feature_dimension, init='uniform', W_regularizer=l2(0.0001)))
     models.add(PReLU())
     models.add(BatchNormalization())
-    models.add(Dropout(0.5))
-    models.add(Dense(128, activation='relu'))
+    models.add(Dropout(0.8))
+    models.add(Dense(64, activation='relu'))
     models.add(Dropout(0.3))
     models.add(Dense(32, activation='relu'))
     models.add(Dropout(0.2))
     models.add(Dense(3, activation='softmax'))
-    models.add(Activation('softmax'))
+    #models.add(Activation('softmax'))
     opt = optimizers.Adagrad(lr=0.015)
     models.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
 
@@ -130,7 +131,7 @@ def data_preprocessing(x_raw, x_test_raw):
     x_concat = np.concatenate((x_raw, x_test_raw), axis=0)
     x_after = std.fit_transform(x_concat)
     # PCA transform
-    pca = PCA(n_components=800)
+    pca = PCA(n_components=1000)
     x_after = pca.fit_transform(x_after)
     return x_after[:len(x_raw)], x_after[len(x_raw):]
 
@@ -283,7 +284,7 @@ def main():
     x_test = from_csv_to_ndarray(data=data_x_test)
     x_train, x_test = data_preprocessing(x_train, x_test)  # Normalizaiton and ...
     # Split the data before oversampling
-    X_train, X_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=7)
+    X_train, X_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=7)
     if opt.Is_oversampling:
         x_train_all, y_train_all = over_sampling(X_train, y_train)
     elif opt.Is_downsampling:
@@ -301,7 +302,10 @@ def main():
         print(x_train_all.shape)
         print(y_train_all.shape)
         model = network2(x_train_all.shape[1])
-        model.fit(x_train_all, one_hot_labels, epochs=30, batch_size=256, validation_data=(X_val, one_hot_label_val))
+        class_weights = {0:5,
+                         1:1.,
+                         2:5}
+        model.fit(x_train_all, one_hot_labels, epochs=30, batch_size=256, class_weight=class_weights,validation_data=(X_val, one_hot_label_val))
         prediction = model.predict_classes(x_test)
         y_pred = model.predict_classes(x_train_all)
         BMAC_all = balanced_accuracy_score(y_train_all, y_pred)
