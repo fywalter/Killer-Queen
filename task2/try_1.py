@@ -33,9 +33,12 @@ def to_one_hot(sequences, dimension):
 def network(feature_dimension):
     from keras import models 
     from keras import layers
-    from keras.layers import Dense, Activation
+    from keras.layers import Dense, Activation, Dropout
     model = models.Sequential()
     model.add(Dense(64, activation='relu', input_dim=feature_dimension))
+    model.add(Dropout(0.5))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dropout(0.5))
     model.add(Dense(3,activation='softmax'))
     model.compile(optimizer='rmsprop',
                   loss='categorical_crossentropy',
