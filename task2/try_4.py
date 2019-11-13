@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
 import tqdm
 import keras
 import matplotlib.pyplot as plt  # Matlab-style plotting
@@ -55,13 +56,15 @@ def network(feature_dimension):
 
 def network2(feature_dimension):
     models = Sequential()
-    models.add(Dense(64, input_dim=feature_dimension, init='uniform', W_regularizer=l2(0.0001)))
+    models.add(Dense(256, input_dim=feature_dimension, init='uniform', W_regularizer=l2(0.0001)))
     models.add(PReLU())
     models.add(BatchNormalization())
-    models.add(Dropout(0.7))
-    models.add(Dense(36, init='uniform'))
-    models.add(Activation('relu'))
-    models.add(Dense(3, init='uniform'))
+    models.add(Dropout(0.5))
+    models.add(Dense(128, activation='relu'))
+    models.add(Dropout(0.3))
+    models.add(Dense(32, activation='relu'))
+    models.add(Dropout(0.2))
+    models.add(Dense(3, activation='softmax'))
     models.add(Activation('softmax'))
     opt = optimizers.Adagrad(lr=0.015)
     models.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
@@ -126,8 +129,17 @@ def data_preprocessing(x_raw, x_test_raw):
     std = StandardScaler()
     x_concat = np.concatenate((x_raw, x_test_raw), axis=0)
     x_after = std.fit_transform(x_concat)
+    # PCA transform
+    pca = PCA(n_components=800)
+    x_after = pca.fit_transform(x_after)
     return x_after[:len(x_raw)], x_after[len(x_raw):]
 
+def down_sampling(x_train, y_train):
+    print("Down Sampling My friend.....")
+    from imblearn.under_sampling import NearMiss
+    nm1 = NearMiss(version=1)
+    x_train, y_train = nm1.fit_resample(x_train, y_train)
+    return x_train, y_train
 
 def over_sampling(x_train, y_train):
     print()
@@ -256,7 +268,8 @@ def main():
     boolean = lambda x: bool(['False', 'True'].index(x))
     parser = argparse.ArgumentParser()
     parser.add_argument('--method', default='nn', help="choose models options:nn, xgboost, LogisticRegression")
-    parser.add_argument('--Is_oversampling', type=boolean, default='True', help="If over sampling")
+    parser.add_argument('--Is_oversampling', type=boolean, default='False', help="If over sampling")
+    parser.add_argument('--Is_downsampling', type=boolean, default='True', help="If down sampling")
     opt = parser.parse_args()
     # configs:
     X_train_dir = './data/X_train.csv'
@@ -269,21 +282,33 @@ def main():
     x_train = from_csv_to_ndarray(data=data_x)
     x_test = from_csv_to_ndarray(data=data_x_test)
     x_train, x_test = data_preprocessing(x_train, x_test)  # Normalizaiton and ...
+    # Split the data before oversampling
+    X_train, X_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=7)
     if opt.Is_oversampling:
-        x_train, y_train = over_sampling(x_train, y_train)
+        x_train_all, y_train_all = over_sampling(X_train, y_train)
+    elif opt.Is_downsampling:
+        x_train_all, y_train_all = down_sampling(X_train, y_train)
+    else:
+        x_train_all, y_train_all = X_train, y_train
     # x_train, y_train, x_test = select_feature(x_train, y_train, x_test)
     # x_train, y_train, x_test = select_feature(x_train, y_train, x_test, feature_num=950, method="SelectKBest", alpha=0.01)
     # Possible Options: LogisticRegression, XGBoost, neurual network....
     if opt.method == 'nn':
-        X_train, X_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=7)
-        one_hot_labels = keras.utils.to_categorical(y_train, num_classes=3)
+        #X_train, X_val, y_train, y_val = train_test_split(x_train_all, y_train_all, test_size=0.1, random_state=7)
+        one_hot_labels = keras.utils.to_categorical(y_train_all, num_classes=3)
         one_hot_label_val = keras.utils.to_categorical(y_val, num_classes=3)
         print(one_hot_labels)
-        print(X_train.shape)
-        print(y_train.shape)
-        model = network2(1000)
-        model.fit(X_train, one_hot_labels, epochs=15, batch_size=64, validation_data=(X_val, one_hot_label_val))
+        print(x_train_all.shape)
+        print(y_train_all.shape)
+        model = network2(x_train_all.shape[1])
+        model.fit(x_train_all, one_hot_labels, epochs=30, batch_size=256, validation_data=(X_val, one_hot_label_val))
         prediction = model.predict_classes(x_test)
+        y_pred = model.predict_classes(x_train_all)
+        BMAC_all = balanced_accuracy_score(y_train_all, y_pred)
+        print("BMAC on ALL training data", BMAC_all)
+        y_val_pred = model.predict_classes(X_val)
+        BMAC_val = balanced_accuracy_score(y_val_pred, y_val)
+        print("BMAC on validation data", BMAC_val)
     else:
         if opt.method == 'LogisticRegression':
             chosen_model = LogisticRegression(solver='liblinear', multi_class='auto', class_weight='balanced')
