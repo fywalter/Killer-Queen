@@ -1,60 +1,28 @@
 import pandas as pd
 import numpy as np
-import argparse
 from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.feature_selection import SelectFromModel
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import balanced_accuracy_score
-from sklearn.model_selection import train_test_split
 import tqdm
-import keras
 import matplotlib.pyplot as plt  # Matlab-style plotting
 import seaborn as sns
 color = sns.color_palette()
-#from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import balanced_accuracy_score
 from sklearn.base import clone
 import warnings
 def ignore_warn(*args, **kwargs):
     pass
 warnings.warn = ignore_warn #ignore annoying warning (from sklearn and seaborn)
 
-#import xgboost as xgb
-#model_XGBoostClassifier = xgb.XGBClassifier()
+import xgboost as xgb
+model_XGBoostClassifier = xgb.XGBClassifier()
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.utils import class_weight
 
-# One Hot Encoder
-def to_one_hot(sequences, dimension):
-    results = np.zeros((len(sequences), dimension))
-    for i, sequence in enumerate(sequences):
-        results[i, sequence] = 1
-    return results
 
-def network(feature_dimension):
-    from keras import models 
-    from keras import layers
-    from keras.layers import Dense, Activation, Dropout
-    model = models.Sequential()
-    model.add(Dense(64, activation='relu', input_dim=feature_dimension))
-    model.add(Dropout(0.5))
-    model.add(Dense(64, activation='relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(3,activation='softmax'))
-    model.compile(optimizer='rmsprop',
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-    return model
-    
 def bas(y_pred, y_true):
-    corrects = np.zeros(3)
-    class_num = np.zeros(3)
-    for i in range(len(y_pred)):
-        class_num[y_true[i]] += 1
-        corrects[y_true[i]] += (y_true[i] == y_pred[i])
-    #BMAC = balanced_accuracy_score(y_ture, y_pred)
-    BMAC = balanced_accuracy_score(y_true, y_pred)
-    #return np.sum(corrects/class_num)/3
-    return BMAC
+    return balanced_accuracy_score(y_true, y_pred)
 
 
 def load_data(x_path='./X_train.csv', y_path='./y_train.csv', x_test_path='./X_test.csv'):
@@ -115,13 +83,6 @@ def over_sampling(x_train, y_train):
     print("#Sample in Class 0: {}".format(class0_num))
     print("#Sample in Class 1: {}".format(class1_num))
     print("#Sample in Class 2: {}".format(class2_num))
-    # Using SMOTE: https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.SMOTE.html
-    # an Over-sampling approach
-    # Over sampling on training and validation data
-    from imblearn.over_sampling import SMOTE
-    sm = SMOTE(sampling_strategy='auto', random_state=20)
-    x_train , y_train = sm.fit_resample(x_train, y_train)
-    #X_train, X_val, y_train, y_val = train_test_split(X_train,y,test_size=0.2,random_state=7)
     x_out = x_train
     y_out = y_train
 
@@ -147,8 +108,17 @@ def select_feature(x_train, y_train, x_test):
     print()
     print("Selecting features...")
     print("Before feature selection: {}".format(x_train.shape))
-    x_selected = x_train
-    x_test_selected = x_test
+    clf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=0, class_weight="balanced")
+    random_feature = np.random.rand(x_train.shape[0]*5).reshape((x_train.shape[0], 5))
+    x_train_new = np.concatenate((x_train, random_feature), axis=1)
+    clf.fit(x_train_new, y_train)
+    random_feature_importance = clf.feature_importances_[-5:]
+    feature_importance = clf.feature_importances_[:-5]
+    for i in range(5):
+        feature_importance[feature_importance < random_feature_importance[i]] = 0
+    select_idx = feature_importance > 0
+    x_selected = x_train[:, select_idx]
+    x_test_selected = x_test[:, select_idx]
     print("After feature selection: {}".format(x_selected.shape))
     return x_selected, y_train, x_test_selected
 
@@ -198,55 +168,35 @@ def evaluate_model(model, x_all, y_all):
 def main():
     print()
     print('***************By Killer Queen***************')
-    boolean = lambda x: bool(['False', 'True'].index(x))
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--method', default='nn', help="choose models options:nn, xgboost, LogisticRegression")
-    parser.add_argument('--Is_oversampling',type=boolean, default='True', help="If over sampling")
-    opt = parser.parse_args()
+
     # configs:
     X_train_dir = './data/X_train.csv'
     y_train_dir = './data/y_train.csv'
     X_test_dir = './data/X_test.csv'
     y_pred_save_dir = './y_test_try.csv'
+    do_over_sampling = False
     data_x, data_y, data_x_test = load_data(x_path=X_train_dir, y_path=y_train_dir, x_test_path=X_test_dir)
     test_ID = data_x_test['id']
     y_train = from_csv_to_ndarray(data=data_y)
     x_train = from_csv_to_ndarray(data=data_x)
     x_test = from_csv_to_ndarray(data=data_x_test)
     x_train, x_test = data_preprocessing(x_train, x_test)   # Normalizaiton and ...
-    if opt.Is_oversampling:
+    if do_over_sampling:
         x_train, y_train = over_sampling(x_train, y_train)
     x_train, y_train, x_test = select_feature(x_train, y_train, x_test)
-    # Possible Options: LogisticRegression, XGBoost, neurual network....
-    if opt.method == 'nn':
-        X_train, X_val, y_train, y_val = train_test_split(x_train,y_train,test_size=0.2,random_state=7)
-        one_hot_labels = keras.utils.to_categorical(y_train, num_classes=3)
-        one_hot_label_val = keras.utils.to_categorical(y_val, num_classes=3)
-        print(one_hot_labels)
-        print(X_train.shape)
-        print(y_train.shape)
-        #one_hot_label = to_one_hot(y_train,3)
-        model = network(1000)
-        model.fit(X_train, one_hot_labels, epochs=15, batch_size=64, validation_data=(X_val, one_hot_label_val))
-        prediction = model.predict_classes(x_test)
-    else:
-        if opt.method == 'LogisticRegression':
-            chosen_model = LogisticRegression(solver='liblinear',multi_class='auto',class_weight='balanced')
-        elif opt.method == 'xgboost':
-            chosen_model = model_XGBoostClassifier
-        model = evaluate_model(chosen_model, x_train, y_train)
-        prediction = model.predict(x_test)
-    # Neural Network Approach
 
-    # show correlation heat map
-    """
-    train = np.concatenate((x_select, y_select.reshape((-1, 1))), axis=1)
+    train = np.concatenate((x_train, y_train.reshape((-1, 1))), axis=1)
     df = pd.DataFrame(train)
     corrmat = df.corr()
     plt.subplots(figsize=(12, 9))
     sns.heatmap(corrmat, vmax=0.9, square=True)
     plt.show()
-    """
+
+    from sklearn.svm import SVC
+    clf = SVC(gamma='auto', class_weight='balanced')
+    model = evaluate_model(clf, x_train, y_train)
+    prediction = model.predict(x_test)
+    # show correlation heat map
 
     sub = pd.DataFrame()
     sub['id'] = test_ID
