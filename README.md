@@ -12,6 +12,8 @@ Main schedual:
       <th>Stage 2</th>
       <th>Stage 3</th>
       <th>Stage 4</th>
+      <th>Stage 5</th>
+      <th>Stage 6</th>
     </tr>
   </thead>
   <tbody>
