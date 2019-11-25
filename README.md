@@ -1,3 +1,33 @@
+# Task 3
+
+Current stage: Reading
+=========================
+
+Main schedual:
+==============
+<table>
+  <thead>
+    <tr>
+      <th>Stage 1</th>
+      <th>Stage 2</th>
+      <th>Stage 3</th>
+      <th>Stage 4</th>
+      <th>Stage 5</th>
+      <th>Stage 6</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Visualization & Statistics</td>
+      <td>Data preprocessing: abnormal data / noise (auto encoder/fft)</td>
+      <td>Slicing & statistics</td>
+      <td>Feature extraction(Manural, auto-encoder, fft)</td>
+      <td>Aggregation model</td>
+      <td>Sequence model</td>
+    </tr>
+  </tbody>
+</table>
+
 # Task 2
 
 Current stage: Reading
