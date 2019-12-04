@@ -1,7 +1,7 @@
 # Task 4
 
-Current stage: Reading
-=========================
+Current stage: Visualization & Statistics
+==========================================
 
 Main schedual:
 ==============
