@@ -1,3 +1,32 @@
+# Task 4
+
+Current stage: Reading
+=========================
+
+Main schedual:
+==============
+<table>
+  <thead>
+    <tr>
+      <th>Stage 1</th>
+      <th>Stage 2</th>
+      <th>Stage 3</th>
+      <th>Stage 4</th>
+      <th>Stage 5</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Visualization & Statistics</td>
+      <td>Preprocessing & feature extraction</td>
+      <td>SImple xgb model</td>
+      <td>CNN based model</td>
+      <td>RNN based model</td>
+    </tr>
+  </tbody>
+</table>
+
+
 # Task 3
 
 Current stage: Reading
