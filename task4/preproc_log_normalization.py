@@ -87,8 +87,7 @@ mean_test_eeg2_fft_sub4 = calc_mean(test_eeg2_fft_sub4, 'test')
 std_test_eeg2_fft_sub4 = calc_std(test_eeg2_fft_sub4, 'test', mean_test_eeg2_fft_sub4)
 mean_test_eeg2_fft_sub5 = calc_mean(test_eeg2_fft_sub5, 'test')
 std_test_eeg2_fft_sub4 = calc_std(test_eeg2_fft_sub5, 'test', mean_test_eeg2_fft_sub5)
-#print(mean_test_eeg2_fft_sub4.shape)
-#print(std_test_eeg2_fft_sub4.shape)
+
 # normalize (X-mean)/std
 train_eeg1_fft_sub1 = normalize(train_eeg1_fft_sub1, mean_train_eeg1_fft_sub1, std_train_eeg1_fft_sub1)
 train_eeg1_fft_sub2 = normalize(train_eeg1_fft_sub2, mean_train_eeg1_fft_sub2, std_train_eeg1_fft_sub2)
