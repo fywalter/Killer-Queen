@@ -25,7 +25,7 @@ def extract_and_save_fft_old(train_eeg1, train_eeg2, train_emg, mode):
                 start_pos = slice_idx*step_size
                 slice = sig[start_pos:start_pos+window_size]
                 slice_fft = np.abs(np.fft.rfft(slice)/window_size)
-                slice_fft = slice_fft[:cut_len]  # 0 - 48 Hz
+                slice_fft = slice_fft[1:cut_len+1]
                 sig_fft_feature[:, slice_idx] = np.reshape(slice_fft, (cut_len, 1))[:, 0]
             # print(sig_fft_feature.shape)
             fft_features.append(sig_fft_feature)
@@ -52,7 +52,7 @@ def extract_and_save_fft(train_eeg1, train_eeg2, train_emg, mode):
         for sig in tqdm(signals):
             plt.clf()
             Pxx, f, bins, im = plt.specgram(sig, NFFT=256, Fs=128, noverlap=256-16)
-            fft_features.append(Pxx[:cut_len, :])
+            fft_features.append(Pxx[1:cut_len+1, :])
         fft_features = np.array(fft_features)
         np.save('./data/{}_{}_fft_features_new.npy'.format(mode, name), fft_features)
     return
