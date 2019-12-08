@@ -1,6 +1,17 @@
 # Task 4
 
-Current stage: Visualization & Statistics
+How to run
+=======================
+
+1. Generate npy from csv: csv2npy.py
+2. Generate fft features with prepare_fft_feature.py
+3. Preprocess(Normalization and concat adjacent epoch feature) with preprocessing_ffts
+4. Model
+4.1 Do cv with cnn_cv_single_epoch.py or cnn_cv_multi_epoch.py
+4.2 Make prediction with cnn_pred_single_epoch.py or cnn_pred_multi_epoch.py
+
+
+Current stage: CNN based model
 ==========================================
 
 Main schedual:
