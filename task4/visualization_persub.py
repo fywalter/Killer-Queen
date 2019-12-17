@@ -225,22 +225,23 @@ def generate_without_per_sub_features():
     np.save('./data/features_sub2_eeg2_no_pb.npy', np.array(features_sub2_eeg2))
 
 
-def gen_PSD_data():
+def gen_PSD_data(persub):
+    if persub: 
     # features with per subject normalization
-    features_sub0_eeg1 = np.load('./data/features_sub0_eeg1.npy')
-    features_sub0_eeg2 = np.load('./data/features_sub0_eeg2.npy')
-    features_sub1_eeg1 = np.load('./data/features_sub1_eeg1.npy')
-    features_sub1_eeg2 = np.load('./data/features_sub1_eeg2.npy')
-    features_sub2_eeg1 = np.load('./data/features_sub2_eeg1.npy')
-    features_sub2_eeg2 = np.load('./data/features_sub2_eeg2.npy')
-
+        features_sub0_eeg1 = np.load('./data/features_sub0_eeg1.npy')
+        features_sub0_eeg2 = np.load('./data/features_sub0_eeg2.npy')
+        features_sub1_eeg1 = np.load('./data/features_sub1_eeg1.npy')
+        features_sub1_eeg2 = np.load('./data/features_sub1_eeg2.npy')
+        features_sub2_eeg1 = np.load('./data/features_sub2_eeg1.npy')
+        features_sub2_eeg2 = np.load('./data/features_sub2_eeg2.npy')
+    elif persub == False:
     # features without per subject normalization
-    features_sub0_eeg1_no_pb = np.load('./data/features_sub0_eeg1_no_pb.npy')
-    features_sub0_eeg2_no_pb = np.load('./data/features_sub0_eeg2_no_pb.npy')
-    features_sub1_eeg1_no_pb = np.load('./data/features_sub1_eeg1_no_pb.npy')
-    features_sub1_eeg2_no_pb = np.load('./data/features_sub1_eeg2_no_pb.npy')
-    features_sub2_eeg1_no_pb = np.load('./data/features_sub2_eeg1_no_pb.npy')
-    features_sub2_eeg2_no_pb = np.load('./data/features_sub2_eeg2_no_pb.npy')
+        features_sub0_eeg1 = np.load('./data/features_sub0_eeg1_no_pb.npy')
+        features_sub0_eeg2 = np.load('./data/features_sub0_eeg2_no_pb.npy')
+        features_sub1_eeg1 = np.load('./data/features_sub1_eeg1_no_pb.npy')
+        features_sub1_eeg2 = np.load('./data/features_sub1_eeg2_no_pb.npy')
+        features_sub2_eeg1 = np.load('./data/features_sub2_eeg1_no_pb.npy')
+        features_sub2_eeg2 = np.load('./data/features_sub2_eeg2_no_pb.npy')
 
     y_train = np.load('./data/train_labels.npy')
     y_train_sub0 = y_train[:21600]
@@ -392,75 +393,7 @@ def gen_PSD_data():
     freq_c1 = np.repeat(freq, (n_sub0_c1+n_sub1_c1+n_sub2_c1)*32)
     freq_c2 = np.repeat(freq, (n_sub0_c2+n_sub1_c2+n_sub2_c2)*32)
     print('freq_c0.shape',freq_c0.shape)
-    '''
-    # calculate the mean of each frequency, which is the PSD
-    # we get vectors in (48, )
-    features_sub0_eeg1_c0_reshape_mean = np.mean(features_sub0_eeg1_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg2_c0_reshape_mean = np.mean(features_sub0_eeg2_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg1_c1_reshape_mean = np.mean(features_sub0_eeg1_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg2_c1_reshape_mean = np.mean(features_sub0_eeg2_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg1_c2_reshape_mean = np.mean(features_sub0_eeg1_c2_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg2_c2_reshape_mean = np.mean(features_sub0_eeg2_c2_reshape, axis=1, keepdims=True).flatten()
-
-    features_sub1_eeg1_c0_reshape_mean = np.mean(features_sub1_eeg1_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg2_c0_reshape_mean = np.mean(features_sub1_eeg2_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg1_c1_reshape_mean = np.mean(features_sub1_eeg1_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg2_c1_reshape_mean = np.mean(features_sub1_eeg2_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg1_c2_reshape_mean = np.mean(features_sub1_eeg1_c2_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg2_c2_reshape_mean = np.mean(features_sub1_eeg2_c2_reshape, axis=1, keepdims=True).flatten()
-
-    features_sub2_eeg1_c0_reshape_mean = np.mean(features_sub2_eeg1_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg2_c0_reshape_mean = np.mean(features_sub2_eeg2_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg1_c1_reshape_mean = np.mean(features_sub2_eeg1_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg2_c1_reshape_mean = np.mean(features_sub2_eeg2_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg1_c2_reshape_mean = np.mean(features_sub2_eeg1_c2_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg2_c2_reshape_mean = np.mean(features_sub2_eeg2_c2_reshape, axis=1, keepdims=True).flatten()
-
-    # calculate the mean of each frequency, which is the PSD
-    # we get vectors in (48, )
-    features_sub0_eeg1_c0_reshape_std = np.std(features_sub0_eeg1_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg2_c0_reshape_std = np.std(features_sub0_eeg2_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg1_c1_reshape_std = np.std(features_sub0_eeg1_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg2_c1_reshape_std = np.std(features_sub0_eeg2_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg1_c2_reshape_std = np.std(features_sub0_eeg1_c2_reshape, axis=1, keepdims=True).flatten()
-    features_sub0_eeg2_c2_reshape_std = np.std(features_sub0_eeg2_c2_reshape, axis=1, keepdims=True).flatten()
-
-    features_sub1_eeg1_c0_reshape_std = np.std(features_sub1_eeg1_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg2_c0_reshape_std = np.std(features_sub1_eeg2_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg1_c1_reshape_std = np.std(features_sub1_eeg1_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg2_c1_reshape_std = np.std(features_sub1_eeg2_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg1_c2_reshape_std = np.std(features_sub1_eeg1_c2_reshape, axis=1, keepdims=True).flatten()
-    features_sub1_eeg2_c2_reshape_std = np.std(features_sub1_eeg2_c2_reshape, axis=1, keepdims=True).flatten()
-
-    features_sub2_eeg1_c0_reshape_std = np.std(features_sub2_eeg1_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg2_c0_reshape_std = np.std(features_sub2_eeg2_c0_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg1_c1_reshape_std = np.std(features_sub2_eeg1_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg2_c1_reshape_std = np.std(features_sub2_eeg2_c1_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg1_c2_reshape_std = np.std(features_sub2_eeg1_c2_reshape, axis=1, keepdims=True).flatten()
-    features_sub2_eeg2_c2_reshape_std = np.std(features_sub2_eeg2_c2_reshape, axis=1, keepdims=True).flatten()
-    '''
     
-    # convert PSD to 1)dict, and 2)DF 
-    '''
-    dict_PSD_eeg1_c0 = {'freq':freq_c0, 
-                        'psd':features_eeg1_c0,
-                        'subj':sub_label_c0} 
-    dict_PSD_eeg1_c1 = {'freq':freq_c1, 
-                        'psd':features_eeg1_c1,
-                        'subj':sub_label_c1}
-    dict_PSD_eeg1_c2 = {'freq':freq_c2, 
-                        'psd':features_eeg1_c2,
-                        'subj':sub_label_c2}
-    dict_PSD_eeg2_c0 = {'freq':freq_c0, 
-                        'psd':features_eeg2_c0,
-                        'subj':sub_label_c0} 
-    dict_PSD_eeg2_c1 = {'freq':freq_c1, 
-                        'psd':features_eeg2_c1,
-                        'subj':sub_label_c1}
-    dict_PSD_eeg2_c2 = {'freq':freq_c2, 
-                        'psd':features_eeg2_c2,
-                        'subj':sub_label_c2}
-    '''
     # write PSD's to DataFrame
     dict_PSD_eeg1_c0_sub0 = {'freq':np.repeat(freq, n_sub0_c0*32), 
                              'psd':features_sub0_eeg1_c0_reshape_2,
@@ -539,99 +472,162 @@ def gen_PSD_data():
     df_PSD_eeg2_c2_sub0 = pd.DataFrame.from_dict(dict_PSD_eeg2_c2_sub0)
     df_PSD_eeg2_c2_sub1 = pd.DataFrame.from_dict(dict_PSD_eeg2_c2_sub1)
     df_PSD_eeg2_c2_sub2 = pd.DataFrame.from_dict(dict_PSD_eeg2_c2_sub2)
-    '''
-    df_PSD_eeg1_c0 = pd.DataFrame.from_dict(dict_PSD_eeg1_c0)
-    df_PSD_eeg1_c1 = pd.DataFrame.from_dict(dict_PSD_eeg1_c1)
-    df_PSD_eeg1_c2 = pd.DataFrame.from_dict(dict_PSD_eeg1_c2)
-    df_PSD_eeg2_c0 = pd.DataFrame.from_dict(dict_PSD_eeg2_c0)
-    df_PSD_eeg2_c1 = pd.DataFrame.from_dict(dict_PSD_eeg2_c1)
-    df_PSD_eeg2_c2 = pd.DataFrame.from_dict(dict_PSD_eeg2_c2)
-    '''
+
     # save df
-    df_PSD_eeg1_c0_sub0.to_pickle('./data/PSD_eeg1_c0_sub0.pkl')
-    df_PSD_eeg1_c1_sub0.to_pickle('./data/PSD_eeg1_c1_sub0.pkl')
-    df_PSD_eeg1_c2_sub0.to_pickle('./data/PSD_eeg1_c2_sub0.pkl')
+    if persub:
+        print('mode: persub')
+        df_PSD_eeg1_c0_sub0.to_pickle('./data/PSD_eeg1_c0_sub0.pkl')
+        df_PSD_eeg1_c1_sub0.to_pickle('./data/PSD_eeg1_c1_sub0.pkl')
+        df_PSD_eeg1_c2_sub0.to_pickle('./data/PSD_eeg1_c2_sub0.pkl')
 
-    df_PSD_eeg2_c0_sub0.to_pickle('./data/PSD_eeg2_c0_sub0.pkl')
-    df_PSD_eeg2_c1_sub0.to_pickle('./data/PSD_eeg2_c1_sub0.pkl')
-    df_PSD_eeg2_c2_sub0.to_pickle('./data/PSD_eeg2_c2_sub0.pkl')
+        df_PSD_eeg2_c0_sub0.to_pickle('./data/PSD_eeg2_c0_sub0.pkl')
+        df_PSD_eeg2_c1_sub0.to_pickle('./data/PSD_eeg2_c1_sub0.pkl')
+        df_PSD_eeg2_c2_sub0.to_pickle('./data/PSD_eeg2_c2_sub0.pkl')
 
-    df_PSD_eeg1_c0_sub1.to_pickle('./data/PSD_eeg1_c0_sub1.pkl')
-    df_PSD_eeg1_c1_sub1.to_pickle('./data/PSD_eeg1_c1_sub1.pkl')
-    df_PSD_eeg1_c2_sub1.to_pickle('./data/PSD_eeg1_c2_sub1.pkl')
+        df_PSD_eeg1_c0_sub1.to_pickle('./data/PSD_eeg1_c0_sub1.pkl')
+        df_PSD_eeg1_c1_sub1.to_pickle('./data/PSD_eeg1_c1_sub1.pkl')
+        df_PSD_eeg1_c2_sub1.to_pickle('./data/PSD_eeg1_c2_sub1.pkl')
 
-    df_PSD_eeg2_c0_sub1.to_pickle('./data/PSD_eeg2_c0_sub1.pkl')
-    df_PSD_eeg2_c1_sub1.to_pickle('./data/PSD_eeg2_c1_sub1.pkl')
-    df_PSD_eeg2_c2_sub1.to_pickle('./data/PSD_eeg2_c2_sub1.pkl')
+        df_PSD_eeg2_c0_sub1.to_pickle('./data/PSD_eeg2_c0_sub1.pkl')
+        df_PSD_eeg2_c1_sub1.to_pickle('./data/PSD_eeg2_c1_sub1.pkl')
+        df_PSD_eeg2_c2_sub1.to_pickle('./data/PSD_eeg2_c2_sub1.pkl')
 
-    df_PSD_eeg1_c0_sub2.to_pickle('./data/PSD_eeg1_c0_sub2.pkl')
-    df_PSD_eeg1_c1_sub2.to_pickle('./data/PSD_eeg1_c1_sub2.pkl')
-    df_PSD_eeg1_c2_sub2.to_pickle('./data/PSD_eeg1_c2_sub2.pkl')
+        df_PSD_eeg1_c0_sub2.to_pickle('./data/PSD_eeg1_c0_sub2.pkl')
+        df_PSD_eeg1_c1_sub2.to_pickle('./data/PSD_eeg1_c1_sub2.pkl')
+        df_PSD_eeg1_c2_sub2.to_pickle('./data/PSD_eeg1_c2_sub2.pkl')
 
-    df_PSD_eeg2_c0_sub2.to_pickle('./data/PSD_eeg2_c0_sub2.pkl')
-    df_PSD_eeg2_c1_sub2.to_pickle('./data/PSD_eeg2_c1_sub2.pkl')
-    df_PSD_eeg2_c2_sub2.to_pickle('./data/PSD_eeg2_c2_sub2.pkl')
+        df_PSD_eeg2_c0_sub2.to_pickle('./data/PSD_eeg2_c0_sub2.pkl')
+        df_PSD_eeg2_c1_sub2.to_pickle('./data/PSD_eeg2_c1_sub2.pkl')
+        df_PSD_eeg2_c2_sub2.to_pickle('./data/PSD_eeg2_c2_sub2.pkl')
+    elif persub==False:
+        print('mode: no persub')
+        df_PSD_eeg1_c0_sub0.to_pickle('./data/PSD_eeg1_c0_sub0_no_pb.pkl')
+        df_PSD_eeg1_c1_sub0.to_pickle('./data/PSD_eeg1_c1_sub0_no_pb.pkl')
+        df_PSD_eeg1_c2_sub0.to_pickle('./data/PSD_eeg1_c2_sub0_no_pb.pkl')
 
-def print_visualization():
+        df_PSD_eeg2_c0_sub0.to_pickle('./data/PSD_eeg2_c0_sub0_no_pb.pkl')
+        df_PSD_eeg2_c1_sub0.to_pickle('./data/PSD_eeg2_c1_sub0_no_pb.pkl')
+        df_PSD_eeg2_c2_sub0.to_pickle('./data/PSD_eeg2_c2_sub0_no_pb.pkl')
+
+        df_PSD_eeg1_c0_sub1.to_pickle('./data/PSD_eeg1_c0_sub1_no_pb.pkl')
+        df_PSD_eeg1_c1_sub1.to_pickle('./data/PSD_eeg1_c1_sub1_no_pb.pkl')
+        df_PSD_eeg1_c2_sub1.to_pickle('./data/PSD_eeg1_c2_sub1_no_pb.pkl')
+
+        df_PSD_eeg2_c0_sub1.to_pickle('./data/PSD_eeg2_c0_sub1_no_pb.pkl')
+        df_PSD_eeg2_c1_sub1.to_pickle('./data/PSD_eeg2_c1_sub1_no_pb.pkl')
+        df_PSD_eeg2_c2_sub1.to_pickle('./data/PSD_eeg2_c2_sub1_no_pb.pkl')
+
+        df_PSD_eeg1_c0_sub2.to_pickle('./data/PSD_eeg1_c0_sub2_no_pb.pkl')
+        df_PSD_eeg1_c1_sub2.to_pickle('./data/PSD_eeg1_c1_sub2_no_pb.pkl')
+        df_PSD_eeg1_c2_sub2.to_pickle('./data/PSD_eeg1_c2_sub2_no_pb.pkl')
+
+        df_PSD_eeg2_c0_sub2.to_pickle('./data/PSD_eeg2_c0_sub2_no_pb.pkl')
+        df_PSD_eeg2_c1_sub2.to_pickle('./data/PSD_eeg2_c1_sub2_no_pb.pkl')
+        df_PSD_eeg2_c2_sub2.to_pickle('./data/PSD_eeg2_c2_sub2_no_pb.pkl')
+
+def print_visualization(persub):
     # df of PSD
-    df_PSD_eeg1_c0_sub0 = pd.read_pickle('./data/PSD_eeg1_c0_sub0.pkl')
-    df_PSD_eeg1_c1_sub0 = pd.read_pickle('./data/PSD_eeg1_c1_sub0.pkl')
-    df_PSD_eeg1_c2_sub0 = pd.read_pickle('./data/PSD_eeg1_c2_sub0.pkl')
+    if persub:
+        df_PSD_eeg1_c0_sub0 = pd.read_pickle('./data/PSD_eeg1_c0_sub0.pkl')
+        df_PSD_eeg1_c1_sub0 = pd.read_pickle('./data/PSD_eeg1_c1_sub0.pkl')
+        df_PSD_eeg1_c2_sub0 = pd.read_pickle('./data/PSD_eeg1_c2_sub0.pkl')
 
-    df_PSD_eeg2_c0_sub0 = pd.read_pickle('./data/PSD_eeg2_c0_sub0.pkl')
-    df_PSD_eeg2_c1_sub0 = pd.read_pickle('./data/PSD_eeg2_c1_sub0.pkl')
-    df_PSD_eeg2_c2_sub0 = pd.read_pickle('./data/PSD_eeg2_c2_sub0.pkl')
+        df_PSD_eeg2_c0_sub0 = pd.read_pickle('./data/PSD_eeg2_c0_sub0.pkl')
+        df_PSD_eeg2_c1_sub0 = pd.read_pickle('./data/PSD_eeg2_c1_sub0.pkl')
+        df_PSD_eeg2_c2_sub0 = pd.read_pickle('./data/PSD_eeg2_c2_sub0.pkl')
 
-    df_PSD_eeg1_c0_sub1 = pd.read_pickle('./data/PSD_eeg1_c0_sub1.pkl')
-    df_PSD_eeg1_c1_sub1 = pd.read_pickle('./data/PSD_eeg1_c1_sub1.pkl')
-    df_PSD_eeg1_c2_sub1 = pd.read_pickle('./data/PSD_eeg1_c2_sub1.pkl')
+        df_PSD_eeg1_c0_sub1 = pd.read_pickle('./data/PSD_eeg1_c0_sub1.pkl')
+        df_PSD_eeg1_c1_sub1 = pd.read_pickle('./data/PSD_eeg1_c1_sub1.pkl')
+        df_PSD_eeg1_c2_sub1 = pd.read_pickle('./data/PSD_eeg1_c2_sub1.pkl')
 
-    df_PSD_eeg2_c0_sub1 = pd.read_pickle('./data/PSD_eeg2_c0_sub1.pkl')
-    df_PSD_eeg2_c1_sub1 = pd.read_pickle('./data/PSD_eeg2_c1_sub1.pkl')
-    df_PSD_eeg2_c2_sub1 = pd.read_pickle('./data/PSD_eeg2_c2_sub1.pkl')
+        df_PSD_eeg2_c0_sub1 = pd.read_pickle('./data/PSD_eeg2_c0_sub1.pkl')
+        df_PSD_eeg2_c1_sub1 = pd.read_pickle('./data/PSD_eeg2_c1_sub1.pkl')
+        df_PSD_eeg2_c2_sub1 = pd.read_pickle('./data/PSD_eeg2_c2_sub1.pkl')
 
-    df_PSD_eeg1_c0_sub2 = pd.read_pickle('./data/PSD_eeg1_c0_sub2.pkl')
-    df_PSD_eeg1_c1_sub2 = pd.read_pickle('./data/PSD_eeg1_c1_sub2.pkl')
-    df_PSD_eeg1_c2_sub2 = pd.read_pickle('./data/PSD_eeg1_c2_sub2.pkl')
+        df_PSD_eeg1_c0_sub2 = pd.read_pickle('./data/PSD_eeg1_c0_sub2.pkl')
+        df_PSD_eeg1_c1_sub2 = pd.read_pickle('./data/PSD_eeg1_c1_sub2.pkl')
+        df_PSD_eeg1_c2_sub2 = pd.read_pickle('./data/PSD_eeg1_c2_sub2.pkl')
 
-    df_PSD_eeg2_c0_sub2 = pd.read_pickle('./data/PSD_eeg2_c0_sub2.pkl')
-    df_PSD_eeg2_c1_sub2 = pd.read_pickle('./data/PSD_eeg2_c1_sub2.pkl')
-    df_PSD_eeg2_c2_sub2 = pd.read_pickle('./data/PSD_eeg2_c2_sub2.pkl')
+        df_PSD_eeg2_c0_sub2 = pd.read_pickle('./data/PSD_eeg2_c0_sub2.pkl')
+        df_PSD_eeg2_c1_sub2 = pd.read_pickle('./data/PSD_eeg2_c1_sub2.pkl')
+        df_PSD_eeg2_c2_sub2 = pd.read_pickle('./data/PSD_eeg2_c2_sub2.pkl')
+
+    elif persub==False:
+        df_PSD_eeg1_c0_sub0 = pd.read_pickle('./data/PSD_eeg1_c0_sub0_no_pb.pkl')
+        df_PSD_eeg1_c1_sub0 = pd.read_pickle('./data/PSD_eeg1_c1_sub0_no_pb.pkl')
+        df_PSD_eeg1_c2_sub0 = pd.read_pickle('./data/PSD_eeg1_c2_sub0_no_pb.pkl')
+
+        df_PSD_eeg2_c0_sub0 = pd.read_pickle('./data/PSD_eeg2_c0_sub0_no_pb.pkl')
+        df_PSD_eeg2_c1_sub0 = pd.read_pickle('./data/PSD_eeg2_c1_sub0_no_pb.pkl')
+        df_PSD_eeg2_c2_sub0 = pd.read_pickle('./data/PSD_eeg2_c2_sub0_no_pb.pkl')
+
+        df_PSD_eeg1_c0_sub1 = pd.read_pickle('./data/PSD_eeg1_c0_sub1_no_pb.pkl')
+        df_PSD_eeg1_c1_sub1 = pd.read_pickle('./data/PSD_eeg1_c1_sub1_no_pb.pkl')
+        df_PSD_eeg1_c2_sub1 = pd.read_pickle('./data/PSD_eeg1_c2_sub1_no_pb.pkl')
+
+        df_PSD_eeg2_c0_sub1 = pd.read_pickle('./data/PSD_eeg2_c0_sub1_no_pb.pkl')
+        df_PSD_eeg2_c1_sub1 = pd.read_pickle('./data/PSD_eeg2_c1_sub1_no_pb.pkl')
+        df_PSD_eeg2_c2_sub1 = pd.read_pickle('./data/PSD_eeg2_c2_sub1_no_pb.pkl')
+
+        df_PSD_eeg1_c0_sub2 = pd.read_pickle('./data/PSD_eeg1_c0_sub2_no_pb.pkl')
+        df_PSD_eeg1_c1_sub2 = pd.read_pickle('./data/PSD_eeg1_c1_sub2_no_pb.pkl')
+        df_PSD_eeg1_c2_sub2 = pd.read_pickle('./data/PSD_eeg1_c2_sub2_no_pb.pkl')
+
+        df_PSD_eeg2_c0_sub2 = pd.read_pickle('./data/PSD_eeg2_c0_sub2_no_pb.pkl')
+        df_PSD_eeg2_c1_sub2 = pd.read_pickle('./data/PSD_eeg2_c1_sub2_no_pb.pkl')
+        df_PSD_eeg2_c2_sub2 = pd.read_pickle('./data/PSD_eeg2_c2_sub2_no_pb.pkl')
     # plot
-    # TO DO: plot every mean vector of features with per subject normalization
+    # TO DO: plot every mean vector of features
     fig1 = plt.figure()
     sns.lineplot(data=df_PSD_eeg1_c0_sub0, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg1_c0_sub1, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg1_c0_sub2, x='freq', y='psd')
-    fig1.savefig('./PSD_fig/PSD_eeg1_c0.png')
+    if persub:
+        fig1.savefig('./PSD_fig/PSD_eeg1_c0.png')
+    elif persub==False:
+        fig1.savefig('./PSD_fig_no_pb/PSD_eeg1_c0_no_pb.png')
     fig2 = plt.figure()
     sns.lineplot(data=df_PSD_eeg2_c0_sub0, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg2_c0_sub1, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg2_c0_sub2, x='freq', y='psd')
-    fig2.savefig('./PSD_fig/PSD_eeg2_c0.png')
+    if persub:
+        fig2.savefig('./PSD_fig/PSD_eeg2_c0.png')
+    elif persub==False:
+        fig2.savefig('./PSD_fig_no_pb/PSD_eeg2_c0_no_pb.png')
 
     fig3 = plt.figure()
     sns.lineplot(data=df_PSD_eeg1_c1_sub0, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg1_c1_sub1, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg1_c1_sub2, x='freq', y='psd')
-    fig3.savefig('./PSD_fig/PSD_eeg1_c1.png')
+    if persub:
+        fig3.savefig('./PSD_fig/PSD_eeg1_c1.png')
+    elif persub==False:
+        fig3.savefig('./PSD_fig_no_pb/PSD_eeg1_c1_no_pb.png')
     fig4 = plt.figure()
     sns.lineplot(data=df_PSD_eeg2_c1_sub0, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg2_c1_sub1, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg2_c1_sub2, x='freq', y='psd')
-    fig4.savefig('./PSD_fig/PSD_eeg2_c1.png')
+    if persub:
+        fig4.savefig('./PSD_fig/PSD_eeg2_c1.png')
+    elif persub==False:
+        fig4.savefig('./PSD_fig_no_pb/PSD_eeg2_c1_no_pb.png')
 
     fig5 = plt.figure()
     sns.lineplot(data=df_PSD_eeg1_c2_sub0, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg1_c2_sub1, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg1_c2_sub2, x='freq', y='psd')
-    fig5.savefig('./PSD_fig/PSD_eeg1_c2.png')
+    if persub:
+        fig5.savefig('./PSD_fig/PSD_eeg1_c2.png')
+    elif persub==False:
+        fig5.savefig('./PSD_fig_no_pb/PSD_eeg1_c2_no_pb.png')
     fig6 = plt.figure()
     sns.lineplot(data=df_PSD_eeg2_c2_sub0, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg2_c2_sub1, x='freq', y='psd')
     sns.lineplot(data=df_PSD_eeg2_c2_sub2, x='freq', y='psd')
-    fig6.savefig('./PSD_fig/PSD_eeg2_c2.png')
-    # TO DO: do the same thing for features without per subject normalization
+    if persub:
+        fig6.savefig('./PSD_fig/PSD_eeg2_c2.png')
+    elif persub==False:
+        fig6.savefig('./PSD_fig_no_pb/PSD_eeg2_c2_no_pb.png')
 
 
 def main():
@@ -645,11 +641,9 @@ def main():
     #generate_per_sub_features()  # (Can be commented out after running once)
     # w/o per subject normalization
     #generate_without_per_sub_features()  # (Can be commented out after running once)
-    # PSD w/ per sub norm
-    #gen_PSD_data()   # (Can be commented out after running once)
-    # PSD w/o per sub norm
-    #gen_PSD_data_no_pb()   # (Can be commented out after running once)
+    # PSD
+    gen_PSD_data(persub=False)   # (Can be commented out after running once)
     # plot PSD
-    print_visualization()
+    print_visualization(persub=False)
 
 main()
